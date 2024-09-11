@@ -1,0 +1,13 @@
+[Unit]
+Description=AT+ sms reader
+After=network.target
+StartLimitIntervalSec=0
+[Service]
+Type=simple
+Restart=always
+RestartSec=10
+User=smser
+ExecStart=/opt/smser/.venv/bin/python -m smser --config-file /opt/smser/config.yaml
+
+[Install]
+WantedBy=multi-user.target

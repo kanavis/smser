@@ -16,4 +16,4 @@ class Config(pydantic.BaseModel):
 
 
 def load_config_yaml(config: str) -> Config:
-    return Config(**yaml.safe_load(config))
+    return Config.model_validate(yaml.safe_load(config))

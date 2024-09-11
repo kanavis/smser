@@ -27,7 +27,7 @@ class SMSPort(ATProtocol, abc.ABC):
             storage = parsed_event.expect_arg(0, str)
             number = parsed_event.expect_arg(1, int)
             try:
-                self.command("AT+CPMS={}".format(storage))
+                self.command("AT+CPMS=\"{}\"".format(storage))
             except ATException as err:
                 log.error("AT protocol exception on set storage: {}".format(err))
                 return
@@ -36,11 +36,11 @@ class SMSPort(ATProtocol, abc.ABC):
             except ATException as err:
                 log.error("AT protocol exception on read sms: {}".format(err))
                 return
-            if len(sms_lines) != 1:
+            if len(sms_lines) != 2:
                 log.error("Wrong number of read SMS lines: {} (1 expected)".format(sms_lines))
                 return
             try:
-                sms = read_incoming_sms_wrapped(sms_lines[0], storage, number)
+                sms = read_incoming_sms_wrapped(sms_lines[1], storage, number)
             except Exception as err:
                 log.error("SMS read exception on read SMS lines ({}): {}".format(sms_lines, err))
                 return

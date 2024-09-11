@@ -63,7 +63,9 @@ class ATProtocol(serial.threaded.LineReader, abc.ABC):
         """
         while self.alive:
             try:
-                self.handle_event(self.events.get())
+                self.handle_event(self.events.get(timeout=1))
+            except queue.Empty:
+                continue
             except Exception:
                 logging.exception("_run_event {}".format(self._dev_name))
 
@@ -103,7 +105,7 @@ class ATProtocol(serial.threaded.LineReader, abc.ABC):
         """
         pass
 
-    def command(self, command: str, response="OK", timeout=5) -> list[str]:
+    def command(self, command: str, response="OK", err_response="ERROR", timeout=5) -> list[str]:
         """
         Set an AT command and wait for the response.
         """
@@ -117,7 +119,7 @@ class ATProtocol(serial.threaded.LineReader, abc.ABC):
                         raise ATException("Port closed")
                     if line == response:
                         return lines
-                    elif line == "ERR":
+                    elif line == err_response:
                         raise ATException("Error for command ('{}'): {}".format(command, "\n".join(lines)))
                     else:
                         lines.append(line)

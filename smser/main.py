@@ -16,7 +16,7 @@ log = logging.getLogger(__name__)
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config-file-path", type=Path, default=Path("config.yaml"))
+    parser.add_argument("--config-file", type=Path, default=Path("config.yaml"))
 
     args = parser.parse_args()
 
@@ -26,9 +26,10 @@ def main():
     h.setLevel(logging.INFO)
     main_log.addHandler(h)
 
-    config = load_config_yaml(args.config_file.read())
+    with open(args.config_file, "r") as f:
+        config = load_config_yaml(f.read())
 
-    telegram_bot = telebot.TeleBot(token=config.telegram_token)
+    telegram_bot = telebot.TeleBot(token=config.telegram_bot_token)
 
     threads = []
     for device in config.devices:
