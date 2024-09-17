@@ -49,7 +49,7 @@ class USSDCheckThread(threading.Thread):
         log.info("Running USSD task '{}' for device '{}'".format(task.code, task.device_name))
         cmd = 'AT+CUSD=1,"{}",15'.format(task.code)
         try:
-            result = task.protocol.command(cmd)
+            result = task.get_protocol().command(cmd)
         except ATException as err:
             log.error("Error sending USSD code '{}' to '{}: {}".format(task.code, task.device_name, err))
             return
@@ -81,5 +81,5 @@ class USSDCheckThread(threading.Thread):
     def run(self):
         try:
             self._run()
-        except Exception as e:
+        except Exception:
             log.exception("Exception in USSD check thread")

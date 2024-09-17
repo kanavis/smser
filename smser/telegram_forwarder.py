@@ -1,5 +1,4 @@
 import logging
-from logging import exception
 
 import telebot
 
@@ -22,7 +21,7 @@ class TelegramForwarder(SMSPort):
                 self._bot.send_message(
                     chat_id=chat_id,
                     text="SMS to {} from {} at {}:\n{}".format(
-                    self._dev_name, sms.sender, sms.date.strftime("%Y-%m-%d %H:%M:%S"), sms.content,
+                        self._dev_name, sms.sender, sms.date.strftime("%Y-%m-%d %H:%M:%S"), sms.content,
                     ),
                 )
             except Exception as err:
