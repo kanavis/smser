@@ -1,4 +1,5 @@
 import argparse
+import datetime
 import functools
 import logging
 import sys
@@ -51,7 +52,19 @@ def main():
         threads.append(serial_thread)
 
         def get_protocol() -> ATProtocol:
-            return serial_thread.protocol
+            start_at = datetime.datetime.now()
+            status = "no_protocol"
+            while True:
+                if datetime.datetime.now() - start_at > datetime.timedelta(seconds=5):
+                    raise RuntimeError("Device {} didn't connect for 5s (status={})".format(device.name, status))
+                protocol = serial_thread.protocol
+                if protocol is None:
+                    continue
+                status = "no_transport"
+                assert isinstance(protocol, ATProtocol)
+                if protocol.transport is not None:
+                    break
+            return protocol
 
         for balance_check in device.balance_checks:
             ussd_check_tasks.append(USSDCheckTask(
