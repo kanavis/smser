@@ -3,13 +3,16 @@ import functools
 import logging
 import sys
 from pathlib import Path
+from typing import cast
 
 import serial
 import serial.threaded
 import telebot
 
+from smser.at_commands import ATProtocol
 from smser.config import load_config_yaml
 from smser.telegram_forwarder import TelegramForwarder
+from smser.ussd import USSDCheckThread, USSDCheckTask
 
 log = logging.getLogger(__name__)
 
@@ -32,6 +35,7 @@ def main():
     telegram_bot = telebot.TeleBot(token=config.telegram_bot_token)
 
     threads = []
+    ussd_check_tasks: list[USSDCheckTask] = []
     for device in config.devices:
         log.info("Starting device {}".format(device))
         chat_ids = []
@@ -46,6 +50,26 @@ def main():
         serial_thread = serial.threaded.ReaderThread(port, forwarder_factory)
         serial_thread.start()
         threads.append(serial_thread)
+
+        def get_protocol() -> ATProtocol:
+            return cast(serial_thread.protocol, ATProtocol)
+
+        for balance_check in device.balance_checks:
+            ussd_check_tasks.append(USSDCheckTask(
+                device_name=device.name,
+                get_protocol=get_protocol,
+                chats=chat_ids,
+                code=balance_check.code,
+                period_seconds=balance_check.period_days * 24 * 3600,
+                hour_from=balance_check.hour_from,
+                hour_till=balance_check.hour_till,
+            ))
+
+    if ussd_check_tasks:
+        log.info("Starting USSD check thread")
+        ussd_check_thread = USSDCheckThread(tasks=ussd_check_tasks, bot=telegram_bot)
+        ussd_check_thread.start()
+        threads.append(ussd_check_thread)
 
     log.info("Initialized. Reading")
     for thread in threads:
