@@ -3,6 +3,7 @@ import datetime
 import functools
 import logging
 import sys
+import time
 from pathlib import Path
 
 import serial
@@ -64,6 +65,7 @@ def main():
                 assert isinstance(protocol, ATProtocol)
                 if protocol.transport is not None:
                     break
+                time.sleep(0.1)
             return protocol
 
         for balance_check in device.balance_checks:
