@@ -1,7 +1,7 @@
 import abc
 import dataclasses
 import logging
-from typing import TypeVar, Type
+from typing import TypeVar, Type, Optional
 
 import serial.threaded
 import threading
@@ -32,6 +32,18 @@ class ATEvent:
         return arg
 
 
+class ATEventSubscription(abc.ABC):
+    def __init__(self):
+        self.subscribed = True
+
+    def unsubscribe(self):
+        self.subscribed = False
+
+    @abc.abstractmethod
+    def process_event(self, event: ATEvent):
+        pass
+
+
 class ATProtocol(serial.threaded.LineReader, abc.ABC):
 
     TERMINATOR = b"\r\n"
@@ -46,6 +58,7 @@ class ATProtocol(serial.threaded.LineReader, abc.ABC):
         self._event_thread.daemon = True
         self._event_thread.name = "at-event-{}".format(dev_name)
         self._event_thread.start()
+        self._subscriptions: list[ATEventSubscription] = []
         self.lock = threading.Lock()
 
     def stop(self):
@@ -99,17 +112,38 @@ class ATProtocol(serial.threaded.LineReader, abc.ABC):
         return ATEvent(event_name, args)
 
     @abc.abstractmethod
+    def handle_parsed_event(self, parsed_event: ATEvent):
+        pass
+
     def handle_event(self, event: str):
         """
         Spontaneous message received.
         """
-        pass
+        log.info("Received event: '%s'", event.strip())
+        try:
+            parsed_event = self.parse_at_event(event)
+        except ATException as err:
+            log.error("AT protocol exception on event: {}".format(err))
+            return
+        self.handle_parsed_event(parsed_event)
+        self._subscriptions = [x for x in self._subscriptions if x.subscribed]
+        for subscription in self._subscriptions:
+            subscription.process_event(parsed_event)
 
-    def command(self, command: str, response="OK", err_response="ERROR", timeout=5) -> list[str]:
+    def command(
+        self,
+        command: str,
+        response="OK",
+        err_response="ERROR",
+        timeout=5,
+        subscribe: Optional[ATEventSubscription] = None,
+    ) -> list[str]:
         """
         Set an AT command and wait for the response.
         """
         with self.lock:  # ensure that just one thread is sending commands at once
+            if subscribe is not None:
+                self._subscriptions.append(subscribe)
             self.write_line(command)
             lines = []
             while True:

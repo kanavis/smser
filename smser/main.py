@@ -68,15 +68,15 @@ def main():
                 time.sleep(0.1)
             return protocol
 
-        for balance_check in device.balance_checks:
+        if device.balance_check is not None:
             ussd_check_tasks.append(USSDCheckTask(
                 device_name=device.name,
                 get_protocol=get_protocol,
                 chats=chat_ids,
-                code=balance_check.code,
-                period_seconds=balance_check.period_days * 24 * 3600,
-                hour_from=balance_check.hour_from,
-                hour_till=balance_check.hour_till,
+                code=device.balance_check.code,
+                period_seconds=device.balance_check.period_days * 24 * 3600,
+                hour_from=device.balance_check.hour_from,
+                hour_till=device.balance_check.hour_till,
             ))
 
     if ussd_check_tasks:

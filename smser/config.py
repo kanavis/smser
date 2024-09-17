@@ -16,7 +16,7 @@ class Device(pydantic.BaseModel):
     device: str
     recipients: list[str]
     baudrate: int = 115200
-    balance_checks: list[BalanceCheck] = pydantic.Field(default_factory=list)
+    balance_check: Optional[BalanceCheck] = None
 
 
 class Config(pydantic.BaseModel):

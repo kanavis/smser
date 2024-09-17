@@ -3,7 +3,7 @@ import logging
 import queue
 import threading
 
-from smser.at_commands import ATProtocol, ATException
+from smser.at_commands import ATProtocol, ATException, ATEvent
 from smser.sms_pdu import read_incoming_sms_wrapped, SMS
 
 log = logging.getLogger(__name__)
@@ -15,14 +15,7 @@ class SMSPort(ATProtocol, abc.ABC):
         super(SMSPort, self).__init__(dev_name=dev_name)
         self.start_forwarder_thread()
 
-    def handle_event(self, event: str):
-        log.info("Received event: '%s'", event.strip())
-        try:
-            parsed_event = self.parse_at_event(event)
-        except ATException as err:
-            log.error("AT protocol exception on event: {}".format(err))
-            return
-
+    def handle_parsed_event(self, parsed_event: ATEvent):
         if parsed_event.event_name == "+CMTI":
             storage = parsed_event.expect_arg(0, str)
             number = parsed_event.expect_arg(1, int)
