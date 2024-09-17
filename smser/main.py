@@ -3,7 +3,6 @@ import functools
 import logging
 import sys
 from pathlib import Path
-from typing import cast
 
 import serial
 import serial.threaded
@@ -52,7 +51,7 @@ def main():
         threads.append(serial_thread)
 
         def get_protocol() -> ATProtocol:
-            return cast(serial_thread.protocol, ATProtocol)
+            return serial_thread.protocol
 
         for balance_check in device.balance_checks:
             ussd_check_tasks.append(USSDCheckTask(
