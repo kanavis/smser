@@ -102,7 +102,7 @@ class USSDCheckThread(threading.Thread):
                 (task.last is None or task.last + datetime.timedelta(seconds=task.period_seconds) <= now)
             ):
                 self.run_task(task)
-        for message in self.delayed_messages:
+        for message in list(self.delayed_messages):
             self.send_message(message)
 
     def run(self):
